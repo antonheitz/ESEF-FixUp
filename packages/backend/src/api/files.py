@@ -1,3 +1,4 @@
+from io import BytesIO
 from fastapi import APIRouter, UploadFile, File
 from fastapi.responses import FileResponse
 from packages.file_handling.FileHandler import FileHandler, TMP_STORAGE_PATH
@@ -15,7 +16,7 @@ async def get_file(id: int, file_name: str):
 
 @router.post("/final/{id}")
 async def get_file(id: int, file: UploadFile = File()):
-    file_handler.save_file(file_handler.final_folder(id), file.filename, file.file)
+    file_handler.save_file(file_handler.final_folder(id), file.filename, BytesIO(file.file.read()))
     database.set_job_status(id, Job.STATUS_DONE)
     return
 

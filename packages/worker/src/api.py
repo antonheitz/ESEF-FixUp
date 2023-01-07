@@ -20,6 +20,10 @@ class Api:
     def set_job_failed(self, job_id: int) -> None:
         requests.post(self.url + "/api/jobs/fail/" + str(job_id))
 
-    def get_original_file(self, job_id: int, filename: str) -> BinaryIO:
-        r = requests.get("http://www.example.com")
+    def get_original_file(self, job_id: int, filename: str) -> BytesIO:
+        r = requests.get(self.url + f"/api/files/original/{job_id}/{filename}")
         return BytesIO(r.content)
+
+    def post_final_file(self, job_id: int, file_path: str) -> None:
+        with open(file_path, "rb") as f:
+            requests.post(self.url + f'/api/files/final/{job_id}', files={ "file": f })

@@ -1,3 +1,4 @@
+from io import BytesIO
 from typing import BinaryIO, List
 from packages.backend.src.database.Database import Database
 from packages.backend.src.dataclasses.jobs_dataclasses import Job
@@ -12,7 +13,7 @@ class JobsHandler:
 
     def add_job(self, filename: str, file: BinaryIO) -> int:
         file_id = self.database.add_job()
-        file_information: FileInformation = self.file_handler.save_file(file_id, filename, file)
+        file_information: FileInformation = self.file_handler.save_file(file_id, filename, BytesIO(file.read()))
         self.database.add_file_name(file_id, filename)
         return file_id
 
