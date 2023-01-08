@@ -30,7 +30,11 @@ pip3 install -r packages/worker/requirements.txt
 
 ### CLI Usage
 
-TBD
+All you need to do is to use the `cli.sh` script and pass two arguments:
+
+```bash
+./cli.sh "<input zip path>" "<output zip path>"
+```
 
 ## Use via REST API
 

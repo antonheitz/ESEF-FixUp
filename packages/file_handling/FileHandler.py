@@ -13,7 +13,10 @@ class FileHandler:
         # create tmp folder if it does not exist yet
         if not os.path.exists(TMP_STORAGE_PATH):
             os.mkdir(TMP_STORAGE_PATH)
-        
+
+    def cleanup(self) -> None:
+        shutil.rmtree(TMP_STORAGE_PATH)
+                
     def save_file(self, file_id: Union[str, int], filename: str, file: io.BytesIO) -> FileInformation:
         workdir: str = os.path.join(TMP_STORAGE_PATH, str(file_id))
         os.mkdir(workdir)
