@@ -3,8 +3,7 @@ import zipfile
 import os
 from packages.worker.src.file_dataclasses import PackageFile
 import xml.dom.minidom as MD
-
-from packages.worker.src.xbrl_dataclasses import IxbrlTags
+from packages.worker.src.constants import IxbrlTags
 
 EXTRACT_FOLDER: str = "TMP_EXTRACT"
 
@@ -12,6 +11,12 @@ def load_files(file_path: str, working_dir: str) -> Tuple[List[PackageFile], str
     result_folder: str = _extract_zip(file_path, working_dir)
     file_paths: List[str] = _discover_files(result_folder)
     return _classify_files(file_paths, result_folder), result_folder
+
+def save_files(files: List[PackageFile]) -> None:
+    for file in files:
+        if file.xml_document:
+            with open(file.path, "w") as f:
+                f.write(file.xml_document.toxml())
 
 def _extract_zip(file_path: str, working_dir: str) -> str:
     # extract zip file
@@ -62,5 +67,15 @@ def _classify_files(file_paths: List[str], base_folder: str) -> List[PackageFile
                 element_count += len(file.xml_document.getElementsByTagNameNS(IxbrlTags.NAMESPACE, IxbrlTags.FOOTNOTE)) 
                 if element_count:
                     file.type = PackageFile.IXBRL
+            # add edit comment for xml files
+            child: MD.Element
+            # add comment to the file
+            for child in file.xml_document.childNodes:
+                if child.nodeType == child.ELEMENT_NODE:
+                    comment_node: MD.Comment = file.xml_document.createComment("POSTPROCCESSED WITH https://github.com/antonheitz/esef-fixup (Version 0.0)") 
+                    if child.hasChildNodes():
+                        child.insertBefore(comment_node, child.childNodes[0])
+                    else:
+                        child.appendChild(comment_node)
         files.append(file)
     return files

@@ -36,16 +36,13 @@ class FileHandler:
         workdir: str = os.path.join(TMP_STORAGE_PATH, self.final_folder(id))
         os.mkdir(workdir)
         destination = os.path.join(workdir, file_name)
-        
         base = os.path.basename(destination)
         name = ".".join(base.split('.')[:-1])
         format = base.split('.')[-1]
         archive_from = os.path.dirname(source)
         archive_to = os.path.basename(source.strip(os.sep))
-        print(source, destination, archive_from, archive_to)
         shutil.make_archive(name, format, archive_from, archive_to)
         shutil.move('%s.%s'%(name,format), destination)
-
         return FileInformation(
             name=file_name,
             path=destination,

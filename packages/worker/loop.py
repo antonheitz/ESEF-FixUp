@@ -8,7 +8,8 @@ from packages.file_handling.FileHandler import FileHandler
 from packages.file_handling.dataclasses import FileInformation
 from packages.worker.src.api import Api
 from packages.worker.src.file_dataclasses import PackageFile
-from packages.worker.src.file_utils import load_files
+from packages.worker.src.file_utils import load_files, save_files
+from packages.worker.src.fix_all import fix_files
 
 api: Api = Api()
 file_handler: FileHandler = FileHandler()
@@ -32,7 +33,8 @@ if check_backend_connection():
                     file_information: FileInformation = file_handler.save_file(job.id, job.file_name, file)
                     files, result_folder = load_files(file_information.path, file_information.workdir)
                     # run works on the ZIP
-
+                    fix_files(files, {})
+                    save_files(files)
                     final_file: FileInformation = file_handler.create_zip(job.id, job.file_name, os.path.join(result_folder, files[0].zip_root))
                     file_handler.delete_file(file_information.workdir)
                     # send final file to api

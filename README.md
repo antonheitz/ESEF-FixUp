@@ -4,17 +4,33 @@ This toolkit lets you fix common issues for ESEF iXBRL filings with the click on
 
 ## Table of Contents
 
-1. Current fixes
+1. [Currently implemented fixes](#currently-implemented-fixes)
 2. [Use via CLI](#use-via-cli)
     1. [CLI Deployment](#cli-deployment)
-    2. Usage
+    2. [CLI Usage](#cli-usage)
 3. [Use via REST API via Docker](#use-via-rest-api)
     1. [Docker Deployment](#docker-deployment)
     2. [REST API Usage](#docker-usage)
 
+## Currently implemented fixes:
+
+TBD
+
 ## Use via CLI
 
 ### CLI Deployment
+
+Make sure you have python 3 installed.
+
+Install the dependencies:
+
+```bash
+pip3 install -r packages/worker/requirements.txt
+```
+
+### CLI Usage
+
+TBD
 
 ## Use via REST API
 
