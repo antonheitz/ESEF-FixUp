@@ -4,7 +4,7 @@ This toolkit lets you fix common issues for ESEF iXBRL filings with the click on
 
 ## Table of Contents
 
-1. [Currently implemented fixes](#currently-implemented-fixes)
+1. [Implemented ESEF Fixes and Upcomming Stuff](#implemented-esef-fixes-and-upcomming-stuff)
 2. [Use via CLI](#use-via-cli)
     1. [CLI Deployment](#cli-deployment)
     2. [CLI Usage](#cli-usage)
@@ -12,9 +12,14 @@ This toolkit lets you fix common issues for ESEF iXBRL filings with the click on
     1. [Docker Deployment](#docker-deployment)
     2. [REST API Usage](#docker-usage)
 
-## Currently implemented fixes:
+## Implemented ESEF Fixes and Upcomming Stuff:
 
-TBD
+1. Inline CSS
+
+Inline CSS can be a hazard for ESEF Block tagging, since the styles are taken into the tagged data when the `escape` atrribute was set to `true` for a tag. This can result in misleading representation of the data, since CSS styles can be interpreted differently in different engines and with a lack of specification of which engine to use by the regulator. This fixup removes the inline-css and adds them back in in a optmized set of classes, resulting in "clean" tag contents when rerenderd by any engine, only based on the "sematic" html structure of the data.
+
+2. (Upcomming) External link removal
+3. (Upcomming) Optimize Data-URL Placements for ESEF Block Tags
 
 ## Use via CLI
 
