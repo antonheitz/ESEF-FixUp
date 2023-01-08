@@ -1,0 +1,5 @@
+CREATE TABLE jobs (
+ id INTEGER PRIMARY KEY AUTOINCREMENT,
+ job_status TEXT NOT NULL,
+ file_name TEXT NOT NULL
+);

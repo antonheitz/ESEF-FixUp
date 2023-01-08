@@ -1,0 +1,26 @@
+version: "3.5"
+services:
+  backend:
+    image: esef-fixup_backend
+    build:
+      context: .
+      dockerfile: packages/backend/Dockerfile
+    ports:
+      - 3001:3001
+    networks:
+      - esef-fixup-network
+  worker:
+    image: esef-fixup_worker
+    build:
+      context: .
+      dockerfile: packages/worker/Dockerfile
+    deploy:
+      mode: replicated
+      replicas: 2
+    depends_on:
+      - backend
+    networks:
+      - esef-fixup-network
+networks:
+  esef-fixup-network:
+    driver: bridge

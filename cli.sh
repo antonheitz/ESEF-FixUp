@@ -1,0 +1,1 @@
+python3 -um packages.worker.cli "$@"
