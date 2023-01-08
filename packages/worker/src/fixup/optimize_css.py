@@ -121,6 +121,7 @@ def _apply_optimized_classes(nodelist_css: List[Tuple[MD.Element, List[str]]]) -
             if id not in added_ids:
                 classes.append(style_combinations[id].class_name)
                 added_ids += style_combinations[id].optimzed_group
+        node.removeAttribute("style")
         node.setAttribute("class", node.getAttribute("class") + " " + " ".join(classes))
     # return style sheet
     return style_sheet
