@@ -4,13 +4,16 @@ import os
 from packages.worker.src.file_dataclasses import PackageFile
 import xml.dom.minidom as MD
 from packages.worker.src.constants import IxbrlTags
+from packages.worker.src.fixup.base_fixup import FixupOptions
 
 EXTRACT_FOLDER: str = "TMP_EXTRACT"
 
-def load_files(file_path: str, working_dir: str) -> Tuple[List[PackageFile], str]:
+
+def load_files(file_path: str, working_dir: str, options: FixupOptions) -> Tuple[List[PackageFile], str]:
     result_folder: str = _extract_zip(file_path, working_dir)
     file_paths: List[str] = _discover_files(result_folder)
-    return _classify_files(file_paths, result_folder), result_folder
+    return _classify_files(file_paths, result_folder, undercover=options.undercover), result_folder
+
 
 def save_files(files: List[PackageFile]) -> None:
     for file in files:
@@ -18,12 +21,14 @@ def save_files(files: List[PackageFile]) -> None:
             with open(file.path, "w") as f:
                 f.write(file.xml_document.toxml())
 
+
 def _extract_zip(file_path: str, working_dir: str) -> str:
     # extract zip file
     result_folder: str = os.path.join(working_dir, EXTRACT_FOLDER)
     with zipfile.ZipFile(file_path, 'r') as f:
         f.extractall(result_folder)
     return result_folder
+
 
 def _discover_files(folder: str) -> List[str]:
     # load list of created files in folder
@@ -36,7 +41,8 @@ def _discover_files(folder: str) -> List[str]:
             files.append(new_path)
     return files
 
-def _classify_files(file_paths: List[str], base_folder: str) -> List[PackageFile]:
+
+def _classify_files(file_paths: List[str], base_folder: str, undercover: bool = False) -> List[PackageFile]:
     # classify and load files
     files: List[PackageFile] = []
     for file_path in file_paths:
@@ -61,21 +67,27 @@ def _classify_files(file_paths: List[str], base_folder: str) -> List[PackageFile
             file.xml_document: MD.Document = MD.parse(file.path)
             if file.type == PackageFile.XHTML:
                 element_count: int = 0
-                element_count += len(file.xml_document.getElementsByTagNameNS(IxbrlTags.NAMESPACE, IxbrlTags.FRACTION)) 
-                element_count += len(file.xml_document.getElementsByTagNameNS(IxbrlTags.NAMESPACE, IxbrlTags.NONFRACTION)) 
-                element_count += len(file.xml_document.getElementsByTagNameNS(IxbrlTags.NAMESPACE, IxbrlTags.NONNUMERIC)) 
-                element_count += len(file.xml_document.getElementsByTagNameNS(IxbrlTags.NAMESPACE, IxbrlTags.FOOTNOTE)) 
+                element_count += len(file.xml_document.getElementsByTagNameNS(
+                    IxbrlTags.NAMESPACE, IxbrlTags.FRACTION))
+                element_count += len(file.xml_document.getElementsByTagNameNS(
+                    IxbrlTags.NAMESPACE, IxbrlTags.NONFRACTION))
+                element_count += len(file.xml_document.getElementsByTagNameNS(
+                    IxbrlTags.NAMESPACE, IxbrlTags.NONNUMERIC))
+                element_count += len(file.xml_document.getElementsByTagNameNS(
+                    IxbrlTags.NAMESPACE, IxbrlTags.FOOTNOTE))
                 if element_count:
                     file.type = PackageFile.IXBRL
-            # add edit comment for xml files
-            child: MD.Element
-            # add comment to the file
-            for child in file.xml_document.childNodes:
-                if child.nodeType == child.ELEMENT_NODE:
-                    comment_node: MD.Comment = file.xml_document.createComment("POSTPROCCESSED WITH https://github.com/antonheitz/esef-fixup (Version 0.0)") 
-                    if child.hasChildNodes():
-                        child.insertBefore(comment_node, child.childNodes[0])
-                    else:
-                        child.appendChild(comment_node)
+            # add edit comment for xml files if not undercover
+            if not undercover:
+                child: MD.Element
+                # add comment to the file
+                for child in file.xml_document.childNodes:
+                    if child.nodeType == child.ELEMENT_NODE:
+                        comment_node: MD.Comment = file.xml_document.createComment(
+                            "POSTPROCCESSED WITH https://github.com/antonheitz/esef-post-processor (Version 0.0)")
+                        if child.hasChildNodes():
+                            child.insertBefore(comment_node, child.childNodes[0])
+                        else:
+                            child.appendChild(comment_node)
         files.append(file)
     return files

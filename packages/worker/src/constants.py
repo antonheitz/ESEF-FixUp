@@ -8,6 +8,7 @@ class IxbrlTags:
     NONFRACTION: str = "nonFraction"
     NONNUMERIC: str = "nonNumeric"
     FOOTNOTE: str = "footnote"
+    HEADER: str = "header"
 
 @dataclass
 class XhtmlTags:

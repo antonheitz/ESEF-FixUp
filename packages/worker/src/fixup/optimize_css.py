@@ -2,8 +2,8 @@
 from dataclasses import dataclass
 from typing import Dict, List, Tuple
 from packages.worker.src.file_dataclasses import PackageFile
-from packages.worker.src.fixup.base_fixup import BaseFixup
-from packages.worker.src.constants import XhtmlTags
+from packages.worker.src.fixup.base_fixup import BaseFixup, FixupOptions
+from packages.worker.src.constants import IxbrlTags, XhtmlTags
 import cssutils
 import xml.dom.minidom as MD
 
@@ -16,23 +16,26 @@ class StyleCombination:
     class_name: str
     optimzed_group: List[int]
 
+
 @dataclass
 class Combination:
     values: List[int]
 
     def remove_combination(self, combination: 'Combination') -> None:
         if self.contains(combination):
-            self.values = [num for num in self.values if num not in combination.values]
-        
-    def contains(self, combination: 'Combination') -> bool: 
+            self.values = [
+                num for num in self.values if num not in combination.values]
+
+    def contains(self, combination: 'Combination') -> bool:
         return all([num in self.values for num in combination.values])
 
     def common_combination(self, combination: 'Combination') -> 'Combination':
-        common_numbers: List[int] = [num for num in combination.values if num in self.values]
+        common_numbers: List[int] = [
+            num for num in combination.values if num in self.values]
         if common_numbers:
             return Combination(common_numbers)
         return None
-        
+
 
 @dataclass
 class CombinationPool:
@@ -41,25 +44,28 @@ class CombinationPool:
     def remove_combination(self, combination: Combination) -> None:
         for combination in self.combinations:
             combination.remove_combination(combination)
-    
+
     def add_combination(self, combination: Combination) -> None:
         for own_combination in self.combinations:
             own_combination.remove_combination(combination)
-        self.combinations = [own_combination for own_combination in self.combinations if len(own_combination.values) > 0]
+        self.combinations = [own_combination for own_combination in self.combinations if len(
+            own_combination.values) > 0]
         self.combinations.append(combination)
 
     def find_common_combination(self, combination: Combination) -> Combination:
         for own_combination in self.combinations:
-            common_combination: Combination = own_combination.common_combination(combination)
+            common_combination: Combination = own_combination.common_combination(
+                combination)
             if common_combination:
                 return common_combination
         return combination
+
 
 class CssOptimizer(BaseFixup):
     def __init__(self, name: str):
         super().__init__(name)
 
-    def run_file(self, file: PackageFile, options: dict = None) -> None:
+    def run_file(self, file: PackageFile, options: FixupOptions) -> None:
         # run this fixup for ixbrl files only
         if file.type == file.IXBRL:
             self.optimize_file_css(file)
@@ -76,16 +82,22 @@ class CssOptimizer(BaseFixup):
         # add style into a style attribute
         head_element: MD.Element
         for head_element in file.xml_document.getElementsByTagNameNS(XhtmlTags.NAMESPACE, XhtmlTags.HEAD):
-            style_node: MD.Element = file.xml_document.createElement(XhtmlTags.STYLE)
-            style_node.appendChild(file.xml_document.createTextNode(style_string))
+            style_node: MD.Element = file.xml_document.createElement(
+                XhtmlTags.STYLE)
+            style_node.appendChild(
+                file.xml_document.createTextNode(style_string))
             head_element.appendChild(style_node)
-        
+
+
 def _find_styles(node: MD.Element) -> List[Tuple[MD.Element, List[str]]]:
-    nodelist: List[Tuple[MD.Element, str]] = []
+    nodelist: List[Tuple[MD.Element, List[str]]] = []
     style: str = node.getAttribute("style")
     if style:
-        parsed_style: cssutils.css.CSSStyleDeclaration = cssutils.parseStyle(style)
-        nodelist.append((node, [rule.cssText for rule in parsed_style]))
+        parsed_style: cssutils.css.CSSStyleDeclaration = cssutils.parseStyle(
+            style)
+        css_styles: List[str] = [rule.cssText for rule in parsed_style]
+        if not ("display: none" in css_styles and node.hasChildNodes() and len([child for child in node.childNodes if child.nodeType == child.ELEMENT_NODE and child.localName == IxbrlTags.HEADER and child.namespaceURI == IxbrlTags.NAMESPACE])):
+            nodelist.append((node, css_styles))
     if node.hasChildNodes():
         child: MD.Element
         for child in node.childNodes:
@@ -93,11 +105,13 @@ def _find_styles(node: MD.Element) -> List[Tuple[MD.Element, List[str]]]:
                 nodelist += _find_styles(child)
     return nodelist
 
+
 def _node_to_class(index: int, node: MD.Element, style: str) -> str:
     class_name: str = f"esef-fixup-style-{index}"
     node.removeAttribute("style")
     node.setAttribute("class", node.getAttribute("class") + f" {class_name}")
     return f".{class_name} {{{style}}} \n"
+
 
 def _apply_optimized_classes(nodelist_css: List[Tuple[MD.Element, List[str]]]) -> str:
     # get ids for all styles, grouping the same property/value combination to get the same id
@@ -108,11 +122,14 @@ def _apply_optimized_classes(nodelist_css: List[Tuple[MD.Element, List[str]]]) -
             if style_value not in style_ids:
                 style_ids[style_value] = next_id
                 next_id += 1
-    nodelist_ids: List[Tuple[MD.Element, List[int]]] = [(node, [style_ids[style] for style in styles]) for node, styles in nodelist_css] 
+    nodelist_ids: List[Tuple[MD.Element, List[int]]] = [
+        (node, [style_ids[style] for style in styles]) for node, styles in nodelist_css]
     # optimize style combinations
-    optimized_style_combinations: List[List[int]] = _optimize_styles([ids for node, ids in nodelist_ids])
+    optimized_style_combinations: List[List[int]] = _optimize_styles(
+        [ids for node, ids in nodelist_ids])
     # build classes
-    style_combinations, style_sheet = _create_style_sheet(optimized_style_combinations, style_ids)
+    style_combinations, style_sheet = _create_style_sheet(
+        optimized_style_combinations, style_ids)
     # apply the classes to the nodes
     for node, ids in nodelist_ids:
         added_ids: List[int] = []
@@ -122,33 +139,40 @@ def _apply_optimized_classes(nodelist_css: List[Tuple[MD.Element, List[str]]]) -
                 classes.append(style_combinations[id].class_name)
                 added_ids += style_combinations[id].optimzed_group
         node.removeAttribute("style")
-        node.setAttribute("class", node.getAttribute("class") + " " + " ".join(classes))
+        node.setAttribute("class", node.getAttribute(
+            "class") + " " + " ".join(classes))
     # return style sheet
     return style_sheet
 
+
 def _create_style_sheet(id_combinations: List[List[int]], style_ids: Dict[str, int]) -> Tuple[Dict[int, StyleCombination], str]:
     # revert style ids for lookup
-    id_to_style: Dict[int, str] = {style_ids[style]:style for style in style_ids}
+    id_to_style: Dict[int, str] = {
+        style_ids[style]: style for style in style_ids}
     style_combinations: Dict[int, StyleCombination] = {}
     style_sheet: str = ""
     for index, id_combination in enumerate(id_combinations):
         class_name: str = f"esef-fixup-style-{index}"
         class_content: str = ""
-        style_combination: StyleCombination = StyleCombination(class_name, id_combination)
+        style_combination: StyleCombination = StyleCombination(
+            class_name, id_combination)
         for id in id_combination:
             class_content += id_to_style[id] + "; "
             style_combinations[id] = style_combination
         style_sheet += f".{class_name} {{ {class_content}}} \n"
     return style_combinations, style_sheet
 
+
 def _optimize_styles(num_combinations: List[List[int]]) -> List[List[int]]:
-    all_nums: List[int] = list(set([num for num_combination in num_combinations for num in num_combination]))
+    all_nums: List[int] = list(
+        set([num for num_combination in num_combinations for num in num_combination]))
     pool: CombinationPool = CombinationPool([Combination(all_nums)])
 
     for num_combination in num_combinations:
         combination: Combination = Combination(num_combination)
         while combination.values:
-            common_combination: Combination = pool.find_common_combination(combination)
+            common_combination: Combination = pool.find_common_combination(
+                combination)
             pool.add_combination(common_combination)
             combination.remove_combination(common_combination)
 

@@ -41,6 +41,8 @@ All you need to do is to use the `cli.sh` script and pass two arguments:
 ./cli.sh "<input zip path>" "<output zip path>"
 ```
 
+In case you want to leave no traces, add in the flag `--undercover`
+
 ## Use via REST API
 
 ### Docker Deployment
